@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>RxStudy</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --card: #1a1d27;
+  --border: #2a2d3e;
+  --accent: #7c6af7;
+  --green: #00c896;
+  --red: #ff5e5e;
+  --text: #eaeaea;
+  --muted: #888;
+  --font: system-ui, -apple-system, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── NAV ── */
+nav {
+  display: flex; gap: 4px;
+  padding: 12px 16px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+}
+.nav-btn {
+  padding: 8px 18px; border-radius: 8px;
+  border: none; background: none;
+  color: var(--muted); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.nav-btn:hover { color: var(--text); }
+.nav-btn.active { background: var(--accent); color: #fff; }
+.nav-logo {
+  font-size: 18px; font-weight: 800;
+  color: var(--green); margin-right: 12px;
+  display: flex; align-items: center;
+}
+
+/* ── PAGES ── */
+.page { display: none; max-width: 760px; margin: 0 auto; padding: 28px 16px; }
+.page.active { display: block; }
+h2 { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border-radius: 8px; border: none;
+  font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-outline { background: none; color: var(--text); border: 1px solid var(--border); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-green { background: rgba(0,200,150,.15); color: var(--green); border: 1px solid var(--green); }
+.btn-red { background: rgba(255,94,94,.12); color: var(--red); border: 1px solid var(--red); }
+.btn-sm { padding: 6px 12px; font-size: 13px; }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
+/* ── FORMS ── */
+.field { margin-bottom: 14px; }
+label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+input, textarea, select {
+  width: 100%; padding: 10px 13px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: var(--font); font-size: 14px;
+  outline: none; transition: border-color .15s;
+}
+input:focus, textarea:focus { border-color: var(--accent); }
+textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+input::placeholder, textarea::placeholder { color: var(--muted); }
+
+/* ── CHIP CHECKBOXES ── */
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  border: 1px solid var(--border); color: var(--muted);
+  cursor: pointer; user-select: none; transition: all .15s;
+}
+.chip:hover { color: var(--text); }
+.chip.on { background: rgba(124,106,247,.2); color: var(--accent); border-color: var(--accent); }
+.chip input { display: none; }
+
+/* ── FLASHCARDS ── */
+.fc-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.fc-count { font-size: 13px; color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+.progress { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 20px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
+
+.card-stage { perspective: 1000px; margin-bottom: 20px; }
+.card-wrap {
+  position: relative; width: 100%; padding-top: 52%;
+  transform-style: preserve-3d;
+  transition: transform .5s cubic-bezier(.4,0,.2,1);
+  cursor: pointer;
+}
+.card-wrap.flipped { transform: rotateY(180deg); }
+.card-face {
+  position: absolute; inset: 0;
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 28px; text-align: center;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  transition: border-color .2s;
+}
+.card-wrap:hover .card-face { border-color: var(--accent); }
+.card-back { transform: rotateY(180deg); }
+.card-label { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 14px; }
+.card-text { font-size: 17px; line-height: 1.6; }
+.card-back .card-text { font-size: 15px; color: #ccc; }
+.card-tags { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; margin-top: 12px; }
+.tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: rgba(124,106,247,.15); color: var(--accent); }
+.tag.cat { background: rgba(0,200,150,.12); color: var(--green); }
+
+.card-hint { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+.card-nav { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.nav-circle {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--card);
+  color: var(--text); font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
+}
+.nav-circle:hover { border-color: var(--accent); color: var(--accent); }
+.nav-circle:disabled { opacity: .3; cursor: default; }
+.grade-row { display: flex; gap: 8px; }
+
+/* search */
+.search-wrap { position: relative; margin-bottom: 16px; }
+.search-wrap input { padding-left: 36px; }
+.search-ico { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+
+/* ── GUIDES ── */
+.guide-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 12px; }
+.guide-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px; cursor: pointer; transition: all .2s; position: relative;
+}
+.guide-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.guide-title { font-weight: 700; font-size: 15px; margin-bottom: 8px; }
+
+/* guide modal */
+.modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.75); backdrop-filter: blur(6px);
+  z-index: 50; overflow-y: auto; padding: 32px 16px;
+}
+.modal-bg.open { display: flex; align-items: flex-start; justify-content: center; }
+.modal {
+  background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+  padding: 32px; max-width: 700px; width: 100%;
+  animation: popIn .25s ease;
+}
+@keyframes popIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+.modal-close { float: right; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+.modal-close:hover { color: var(--red); }
+.modal-title { font-size: 24px; font-weight: 800; margin-bottom: 20px; }
+.guide-body h3 { font-size: 16px; color: var(--green); margin: 20px 0 8px; padding-bottom: 5px; border-bottom: 1px solid rgba(0,200,150,.2); }
+.guide-body p { color: #bbb; line-height: 1.7; margin-bottom: 10px; }
+.guide-body ul { padding-left: 18px; }
+.guide-body li { color: #bbb; line-height: 1.7; margin-bottom: 5px; }
+.guide-body strong { color: var(--text); }
+
+/* ── AUDIO ── */
+.audio-list { display: flex; flex-direction: column; gap: 12px; }
+.audio-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px 18px; position: relative;
+}
+.audio-card:hover { border-color: var(--accent); }
+.audio-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+.audio-notes { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+audio { width: 100%; }
+.audio-placeholder { font-size: 13px; color: var(--muted); padding: 10px; background: rgba(255,255,255,.03); border-radius: 8px; border: 1px dashed var(--border); }
+
+/* ── ADD PANEL ── */
+.add-tabs { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 4px; width: fit-content; margin-bottom: 22px; }
+.add-tab { padding: 7px 16px; border-radius: 7px; border: none; background: none; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); transition: all .15s; }
+.add-tab:hover { color: var(--text); }
+.add-tab.on { background: var(--accent); color: #fff; }
+.add-form { display: none; }
+.add-form.on { display: block; }
+
+.file-drop {
+  border: 2px dashed var(--border); border-radius: 10px; padding: 24px;
+  text-align: center; cursor: pointer; transition: all .2s; position: relative;
+}
+.file-drop:hover { border-color: var(--green); background: rgba(0,200,150,.04); }
+.file-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.file-drop-text { font-size: 14px; color: var(--muted); }
+.file-drop-text strong { color: var(--green); }
+.file-chosen { font-size: 13px; color: var(--green); margin-top: 8px; }
+
+/* ── DELETE BTN ── */
+.del-btn {
+  position: absolute; top: 10px; right: 10px;
+  width: 24px; height: 24px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--card);
+  color: var(--muted); font-size: 12px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: all .15s;
+}
+.guide-card:hover .del-btn, .audio-card:hover .del-btn { opacity: 1; }
+.del-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* ── EMPTY ── */
+.empty { text-align: center; padding: 48px 16px; color: var(--muted); }
+.empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+/* ── FEEDBACK ── */
+.saved { font-size: 13px; color: var(--green); opacity: 0; transition: opacity .3s; }
+.saved.show { opacity: 1; }
+
+/* ── MANAGE ── */
+.manage-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.manage-row:last-child { border-bottom: none; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-logo">Rx</span>
+  <button class="nav-btn active" onclick="go('flashcards')">🃏 Flashcards</button>
+  <button class="nav-btn" onclick="go('guides')">📖 Guides</button>
+  <button class="nav-btn" onclick="go('audio')">🎧 Audio</button>
+  <button class="nav-btn" onclick="go('add')">➕ Add</button>
+  <button class="nav-btn" onclick="go('manage')">⚙️</button>
+</nav>
+
+<!-- FLASHCARDS -->
+<div class="page active" id="page-flashcards">
+  <h2>Flashcards</h2>
+  <div class="fc-bar">
+    <div class="search-wrap" style="margin:0;flex:1;max-width:300px">
+      <span class="search-ico">🔍</span>
+      <input id="fc-search" placeholder="Search…" oninput="initDeck()"/>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="shuffle()">🔀 Shuffle</button>
+    <button class="btn btn-outline btn-sm" onclick="resetProgress()">↺ Reset</button>
+    <span class="fc-count" id="fc-count">0/0</span>
+  </div>
+
+  <div class="progress"><div class="progress-fill" id="fc-prog"></div></div>
+
+  <div class="card-stage">
+    <div class="card-wrap" id="card" onclick="flip()">
+      <div class="card-face card-front">
+        <div class="card-label">Question</div>
+        <div class="card-text" id="card-front"></div>
+        <div class="card-tags" id="card-tags"></div>
+      </div>
+      <div class="card-face card-back">
+        <div class="card-label">Answer</div>
+        <div class="card-text" id="card-back"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-hint" id="card-hint">Click card or press Space to flip</div>
+  <div class="card-nav">
+    <button class="nav-circle" id="btn-prev" onclick="prev()">←</button>
+    <div class="grade-row">
+      <button class="btn btn-green" onclick="grade('know')">✓ Know it</button>
+      <button class="btn btn-red" onclick="grade('review')">✗ Review</button>
+    </div>
+    <button class="nav-circle" id="btn-next" onclick="next()">→</button>
+  </div>
+</div>
+
+<!-- STUDY GUIDES -->
+<div class="page" id="page-guides">
+  <h2>Study Guides</h2>
+  <div class="search-wrap">
+    <span class="search-ico">🔍</span>
+    <input id="guide-search" placeholder="Search guides…" oninput="renderGuides()"/>
+  </div>
+  <div class="guide-grid" id="guide-grid"></div>
+  <div class="btn-row" style="margin-top:20px">
+    <button class="btn btn-outline btn-sm" onclick="go('add');setAddTab('guide')">+ Add Guide</button>
+  </div>
+</div>
+
+<!-- AUDIO -->
+<div class="page" id="page-audio">
+  <h2>Audio</h2>
+  <div class="search-wrap">
+    <span class="search-ico">🔍</span>
+    <input id="audio-search" placeholder="Search recordings…" oninput="renderAudio()"/>
+  </div>
+  <div class="audio-list" id="audio-list"></div>
+  <div class="btn-row" style="margin-top:20px">
+    <button class="btn btn-outline btn-sm" onclick="go('add');setAddTab('audio')">+ Add Audio</button>
+  </div>
+</div>
+
+<!-- ADD -->
+<div class="page" id="page-add">
+  <h2>Add Content</h2>
+  <div class="add-tabs">
+    <button class="add-tab on" id="tab-fc" onclick="setAddTab('fc')">🃏 Flashcard</button>
+    <button class="add-tab" id="tab-guide" onclick="setAddTab('guide')">📖 Guide</button>
+    <button class="add-tab" id="tab-audio" onclick="setAddTab('audio')">🎧 Audio</button>
+  </div>
+
+  <!-- Flashcard form -->
+  <div class="add-form on" id="form-fc">
+    <div class="field"><label>Question</label><textarea id="fc-q" placeholder="Enter your question…" rows="3"></textarea></div>
+    <div class="field"><label>Answer</label><textarea id="fc-a" placeholder="Enter the answer…"></textarea></div>
+    <div class="field"><label>Category (optional)</label><div class="chip-row" id="fc-cat-chips"></div></div>
+    <div class="field"><label>Topic (optional)</label><div class="chip-row" id="fc-topic-chips"></div></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveFC()">Save Flashcard</button>
+      <span class="saved" id="fc-saved">✓ Saved!</span>
+    </div>
+  </div>
+
+  <!-- Guide form -->
+  <div class="add-form" id="form-guide">
+    <div class="field"><label>Title</label><input id="guide-title" placeholder="e.g. Beta-Blockers Quick Reference"/></div>
+    <div class="field">
+      <label>Notes</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="btn btn-outline btn-sm" onclick="ins('h3')">H3</button>
+        <button class="btn btn-outline btn-sm" onclick="ins('p')">¶ Para</button>
+        <button class="btn btn-outline btn-sm" onclick="ins('ul')">• List</button>
+        <button class="btn btn-outline btn-sm" onclick="ins('li')">  Item</button>
+        <button class="btn btn-outline btn-sm" onclick="wrapSel('strong')"><b>Bold</b></button>
+      </div>
+      <textarea id="guide-body" placeholder="<h3>Section</h3>&#10;<p>Your notes here.</p>&#10;<ul><li><strong>Drug</strong> — info</li></ul>" rows="10" style="font-family:monospace;font-size:13px"></textarea>
+      <div style="font-size:12px;color:var(--muted);margin-top:5px">Use &lt;h3&gt; &lt;p&gt; &lt;ul&gt; &lt;li&gt; &lt;strong&gt; for formatting</div>
+    </div>
+    <div class="field"><label>Category (optional)</label><div class="chip-row" id="guide-cat-chips"></div></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveGuide()">Save Guide</button>
+      <span class="saved" id="guide-saved">✓ Saved!</span>
+    </div>
+  </div>
+
+  <!-- Audio form -->
+  <div class="add-form" id="form-audio">
+    <div class="field"><label>Title</label><input id="audio-title" placeholder="e.g. Antibiotic Mnemonics"/></div>
+    <div class="field">
+      <label>Audio File</label>
+      <div class="file-drop" id="audio-drop">
+        <input type="file" accept="audio/*" onchange="pickAudio(this)"/>
+        <div style="font-size:1.8rem;margin-bottom:6px">🎵</div>
+        <div class="file-drop-text">Drop your file or <strong>click to browse</strong></div>
+        <div class="file-drop-text" style="font-size:12px;margin-top:3px">MP3 · M4A · WAV</div>
+        <div class="file-chosen" id="audio-picked"></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Duration (optional)</label><input id="audio-dur" placeholder="12:34"/></div>
+      <div class="field"><label>Notes</label><input id="audio-notes" placeholder="What does this cover?"/></div>
+    </div>
+    <div class="field"><label>Category (optional)</label><div class="chip-row" id="audio-cat-chips"></div></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveAudio()">Save Audio</button>
+      <span class="saved" id="audio-saved">✓ Saved!</span>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:14px">⚠️ Audio is stored in your browser. Export from Manage to back it up.</p>
+  </div>
+</div>
+
+<!-- MANAGE -->
+<div class="page" id="page-manage">
+  <h2>Manage</h2>
+  <div class="btn-row" style="margin-bottom:24px">
+    <button class="btn btn-outline" onclick="exportData()">📤 Export JSON</button>
+    <label class="btn btn-outline" style="cursor:pointer">📥 Import JSON<input type="file" accept=".json" style="display:none" onchange="importData(this)"/></label>
+    <button class="btn btn-sm" style="color:var(--red);border:1px solid var(--red);background:none;border-radius:8px;padding:6px 12px;font-weight:600;cursor:pointer" onclick="clearAll()">🗑 Clear All</button>
+  </div>
+
+  <div style="margin-bottom:20px">
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.07em;margin-bottom:10px">Flashcards (<span id="m-fc-count">0</span>)</div>
+    <div id="m-fc-list"></div>
+  </div>
+  <div style="margin-bottom:20px">
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.07em;margin-bottom:10px">Guides (<span id="m-guide-count">0</span>)</div>
+    <div id="m-guide-list"></div>
+  </div>
+  <div>
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.07em;margin-bottom:10px">Audio (<span id="m-audio-count">0</span>)</div>
+    <div id="m-audio-list"></div>
+  </div>
+</div>
+
+<!-- GUIDE MODAL -->
+<div class="modal-bg" id="guide-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-title" id="modal-title"></div>
+    <div id="modal-tags" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:18px"></div>
+    <div class="guide-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ── STORE ──────────────────────────────────────────────────────
+const KEY = 'rxstudy';
+const CATS = [
+  {id:'antibiotics',label:'🦠 Antibiotics'},
+  {id:'cardiac',label:'❤️ Cardiac'},
+  {id:'cns',label:'🧠 CNS'},
+  {id:'respiratory',label:'🫁 Respiratory'},
+  {id:'endocrine',label:'⚗️ Endocrine'},
+];
+const TOPICS = [
+  {id:'pk',label:'📈 Pharmacokinetics'},
+  {id:'di',label:'⚡ Drug Interactions'},
+  {id:'counsel',label:'💬 Counseling'},
+  {id:'calc',label:'🧮 Calculations'},
+];
+
+function defaultData() {
+  return {
+    flashcards: [
+      {id:'d1',front:'😴 Parasympathetic = ?',back:'Rest & Digest. ACh → muscarinic → SLUDD effects',cat:['cns'],topic:['pk']},
+      {id:'d2',front:'😱 Sympathetic = ?',back:'Fight or Flight. Epi + NE → adrenergic → ↑HR ↑BP bronchodilate',cat:['cns'],topic:['pk']},
+      {id:'d3',front:'💓 Beta-1 blockers do what?',back:'↓ HR, ↓ contractility. Beta-1 = 1 heart. Ex: Metoprolol',cat:['cardiac'],topic:['counsel']},
+      {id:'d4',front:'🫁 Beta-2 agonists do what?',back:'Bronchodilation! Ex: Albuterol for asthma',cat:['respiratory'],topic:['counsel']},
+      {id:'d5',front:'🚨 MAOI + tyramine foods = ?',back:'HYPERTENSIVE CRISIS! ↑↑ NE/Epi. Avoid aged cheese, wine. Can be FATAL!',cat:['cns'],topic:['di']},
+    ],
+    guides: [
+      {id:'g1',title:'Autonomic NS: PSNS vs SNS',cat:['cns'],body:'<h3>PSNS — Rest & Digest 😴</h3><ul><li><strong>NT:</strong> Acetylcholine (ACh)</li><li><strong>Receptor:</strong> Muscarinic</li><li><strong>Effects (SLUDD):</strong> Salivation, Lacrimation, Urination, Defecation, Digestion</li><li>HR ↓, BP ↓, Bronchi constrict, Pupils constrict</li></ul><h3>SNS — Fight or Flight 😱</h3><ul><li><strong>NT:</strong> Epi + NE</li><li><strong>Receptor:</strong> Adrenergic (alpha + beta)</li><li>HR ↑, BP ↑, Bronchi dilate, Pupils dilate</li></ul>'},
+    ],
+    audio: [
+      {id:'a1',title:'Sample: Antibiotic Mnemonics',src:null,duration:'12:34',notes:'Covers penicillins, cephalosporins, macrolides, fluoroquinolones.',cat:['antibiotics']},
+    ],
+    progress: {},
+  };
+}
+
+function load() {
+  try { const r = localStorage.getItem(KEY); if(r) return JSON.parse(r); } catch(e) {}
+  return defaultData();
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(S)); }
+
+let S = load();
+let deck = [], ci = 0, flipped = false, audioData = null;
+
+// ── NAV ───────────────────────────────────────────────────────
+function go(p) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  document.querySelector(`.nav-btn[onclick*="${p}"]`).classList.add('active');
+  if(p==='flashcards') initDeck();
+  if(p==='guides')     renderGuides();
+  if(p==='audio')      renderAudio();
+  if(p==='add')        buildChips();
+  if(p==='manage')     renderManage();
+}
+
+// ── FLASHCARDS ─────────────────────────────────────────────────
+function initDeck() {
+  const q = (document.getElementById('fc-search')?.value||'').toLowerCase();
+  deck = S.flashcards.filter(c => !q || c.front.toLowerCase().includes(q) || c.back.toLowerCase().includes(q));
+  ci = 0; flipped = false; renderCard();
+}
+function renderCard() {
+  const c = deck[ci];
+  document.getElementById('card').classList.remove('flipped'); flipped = false;
+  if(!c) {
+    document.getElementById('card-front').textContent = 'No cards yet. Add some!';
+    document.getElementById('card-back').textContent = '';
+    document.getElementById('card-tags').innerHTML = '';
+    document.getElementById('fc-count').textContent = '0/0';
+    document.getElementById('fc-prog').style.width = '0%';
+    return;
+  }
+  document.getElementById('card-front').textContent = c.front;
+  document.getElementById('card-back').textContent  = c.back;
+  document.getElementById('card-tags').innerHTML = (c.cat||[]).map(id => {
+    const x = CATS.find(y=>y.id===id); return x ? `<span class="tag cat">${x.label}</span>` : '';
+  }).join('');
+  const n = deck.length, pos = ci + 1;
+  document.getElementById('fc-count').textContent = `${pos}/${n}`;
+  document.getElementById('fc-prog').style.width = `${pos/n*100}%`;
+  const st = S.progress[c.id];
+  document.getElementById('card-hint').textContent =
+    st==='know' ? '✅ Marked as known' : st==='review' ? '🔴 Flagged for review' : 'Click card or press Space to flip';
+  document.getElementById('btn-prev').disabled = ci === 0;
+  document.getElementById('btn-next').disabled = ci === n - 1;
+}
+function flip() { flipped=!flipped; document.getElementById('card').classList.toggle('flipped', flipped); }
+function prev() { if(ci>0){ci--;renderCard();} }
+function next() { if(ci<deck.length-1){ci++;renderCard();} }
+function shuffle() { deck=S.flashcards.slice().sort(()=>Math.random()-.5); ci=0; renderCard(); }
+function grade(v) {
+  const c = deck[ci]; if(!c) return;
+  S.progress[c.id] = v; save(); next();
+  if(ci===deck.length-1) renderCard();
+}
+function resetProgress() { if(!confirm('Reset all progress?')) return; S.progress={}; save(); renderCard(); }
+document.addEventListener('keydown', e => {
+  if(document.getElementById('page-flashcards').classList.contains('active')) {
+    if(e.key===' '||e.key==='Enter'){e.preventDefault();flip();}
+    if(e.key==='ArrowLeft') prev();
+    if(e.key==='ArrowRight') next();
+  }
+});
+
+// ── GUIDES ────────────────────────────────────────────────────
+function renderGuides() {
+  const q = (document.getElementById('guide-search')?.value||'').toLowerCase();
+  const grid = document.getElementById('guide-grid');
+  const list = S.guides.filter(g => !q || g.title.toLowerCase().includes(q));
+  if(!list.length) { grid.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><p>No guides yet</p></div>`; return; }
+  grid.innerHTML = list.map(g => `
+    <div class="guide-card" onclick="openGuide('${g.id}')">
+      <button class="del-btn" onclick="event.stopPropagation();delGuide('${g.id}')">✕</button>
+      <div class="guide-title">${esc(g.title)}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">${(g.cat||[]).map(catTag).join('')}</div>
+    </div>`).join('');
+}
+function openGuide(id) {
+  const g = S.guides.find(x=>x.id===id); if(!g) return;
+  document.getElementById('modal-title').textContent = g.title;
+  document.getElementById('modal-tags').innerHTML = (g.cat||[]).map(catTag).join('');
+  document.getElementById('modal-body').innerHTML = g.body;
+  document.getElementById('guide-modal').classList.add('open');
+}
+function closeModal() { document.getElementById('guide-modal').classList.remove('open'); }
+document.getElementById('guide-modal').addEventListener('click', e => { if(e.target===document.getElementById('guide-modal')) closeModal(); });
+function delGuide(id) { if(!confirm('Delete guide?')) return; S.guides=S.guides.filter(g=>g.id!==id); save(); renderGuides(); renderManage(); }
+
+// ── AUDIO ────────────────────────────────────────────────────
+function renderAudio() {
+  const q = (document.getElementById('audio-search')?.value||'').toLowerCase();
+  const list = document.getElementById('audio-list');
+  const items = S.audio.filter(a => !q || a.title.toLowerCase().includes(q));
+  if(!items.length) { list.innerHTML=`<div class="empty"><div class="empty-icon">🎧</div><p>No recordings yet</p></div>`; return; }
+  list.innerHTML = items.map(a => `
+    <div class="audio-card">
+      <button class="del-btn" onclick="delAudio('${a.id}')">✕</button>
+      <div class="audio-title">${esc(a.title)}${a.duration?` <span style="font-size:12px;color:var(--muted)">(${esc(a.duration)})</span>`:''}</div>
+      ${a.notes?`<div class="audio-notes">${esc(a.notes)}</div>`:''}
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${(a.cat||[]).map(catTag).join('')}</div>
+      ${a.src
+        ? `<audio controls><source src="${a.src}">Audio not supported.</audio>`
+        : `<div class="audio-placeholder">⚠️ No audio file attached yet.</div>`}
+    </div>`).join('');
+}
+function delAudio(id) { if(!confirm('Delete recording?')) return; S.audio=S.audio.filter(a=>a.id!==id); save(); renderAudio(); renderManage(); }
+
+// ── ADD FORMS ─────────────────────────────────────────────────
+function setAddTab(t) {
+  document.querySelectorAll('.add-tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.add-form').forEach(x=>x.classList.remove('on'));
+  document.getElementById('tab-'+t).classList.add('on');
+  document.getElementById('form-'+t).classList.add('on');
+}
+function buildChips() {
+  [['fc-cat-chips','fc-topic-chips'],['guide-cat-chips'],['audio-cat-chips']].forEach((ids,fi)=>{
+    ids.forEach((id,i) => {
+      const items = (fi===0&&i===1) ? TOPICS : CATS;
+      document.getElementById(id).innerHTML = items.map(c =>
+        `<label class="chip" onclick="this.classList.toggle('on',this.querySelector('input').checked=!this.querySelector('input').checked)">
+          <input type="checkbox" value="${c.id}"> ${c.label}
+        </label>`).join('');
+    });
+  });
+}
+function getChips(id) { return [...document.querySelectorAll(`#${id} input:checked`)].map(x=>x.value); }
+function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
+function flash(id) { const el=document.getElementById(id); el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2000); }
+
+function saveFC() {
+  const q=document.getElementById('fc-q').value.trim(), a=document.getElementById('fc-a').value.trim();
+  if(!q||!a){alert('Fill in both question and answer.');return;}
+  S.flashcards.push({id:uid(),front:q,back:a,cat:getChips('fc-cat-chips'),topic:getChips('fc-topic-chips')});
+  save(); flash('fc-saved');
+  document.getElementById('fc-q').value=''; document.getElementById('fc-a').value='';
+  document.querySelectorAll('#fc-cat-chips .chip,#fc-topic-chips .chip').forEach(c=>{c.classList.remove('on');c.querySelector('input').checked=false;});
+}
+
+function saveGuide() {
+  const t=document.getElementById('guide-title').value.trim(), b=document.getElementById('guide-body').value.trim();
+  if(!t||!b){alert('Fill in title and content.');return;}
+  S.guides.push({id:uid(),title:t,body:b,cat:getChips('guide-cat-chips')});
+  save(); flash('guide-saved');
+  document.getElementById('guide-title').value=''; document.getElementById('guide-body').value='';
+  document.querySelectorAll('#guide-cat-chips .chip').forEach(c=>{c.classList.remove('on');c.querySelector('input').checked=false;});
+}
+
+function ins(tag) {
+  const ta=document.getElementById('guide-body');
+  const t={h3:'<h3>Section Title</h3>\n',p:'<p>Your text here.</p>\n',ul:'<ul>\n  <li></li>\n</ul>\n',li:'  <li></li>\n'}[tag];
+  const s=ta.selectionStart; ta.value=ta.value.slice(0,s)+t+ta.value.slice(s);
+  ta.focus(); ta.selectionStart=ta.selectionEnd=s+t.length;
+}
+function wrapSel(tag) {
+  const ta=document.getElementById('guide-body');
+  const s=ta.selectionStart,e=ta.selectionEnd,sel=ta.value.slice(s,e)||'text';
+  ta.value=ta.value.slice(0,s)+`<${tag}>${sel}</${tag}>`+ta.value.slice(e); ta.focus();
+}
+
+function pickAudio(input) {
+  const f=input.files[0]; if(!f) return;
+  document.getElementById('audio-picked').textContent='📎 '+f.name;
+  const r=new FileReader(); r.onload=e=>audioData=e.target.result; r.readAsDataURL(f);
+  if(!document.getElementById('audio-title').value) document.getElementById('audio-title').value=f.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
+}
+
+function saveAudio() {
+  const t=document.getElementById('audio-title').value.trim();
+  if(!t){alert('Enter a title.');return;}
+  S.audio.push({id:uid(),title:t,src:audioData||null,duration:document.getElementById('audio-dur').value.trim(),notes:document.getElementById('audio-notes').value.trim(),cat:getChips('audio-cat-chips')});
+  save(); flash('audio-saved'); audioData=null;
+  document.getElementById('audio-title').value=''; document.getElementById('audio-dur').value=''; document.getElementById('audio-notes').value='';
+  document.getElementById('audio-picked').textContent='';
+  document.querySelectorAll('#audio-cat-chips .chip').forEach(c=>{c.classList.remove('on');c.querySelector('input').checked=false;});
+}
+
+// ── MANAGE ────────────────────────────────────────────────────
+function renderManage() {
+  document.getElementById('m-fc-count').textContent=S.flashcards.length;
+  document.getElementById('m-guide-count').textContent=S.guides.length;
+  document.getElementById('m-audio-count').textContent=S.audio.length;
+  document.getElementById('m-fc-list').innerHTML = S.flashcards.length
+    ? S.flashcards.map(c=>`<div class="manage-row"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.front.slice(0,60))}${c.front.length>60?'…':''}</span><button class="btn btn-sm" style="color:var(--red);border:1px solid var(--red);background:none;cursor:pointer;border-radius:6px;padding:4px 10px;font-size:12px" onclick="delFC('${c.id}')">Delete</button></div>`).join('')
+    : '<div style="color:var(--muted);font-size:14px;padding:8px 0">No flashcards yet</div>';
+  document.getElementById('m-guide-list').innerHTML = S.guides.length
+    ? S.guides.map(g=>`<div class="manage-row"><span style="font-weight:600">${esc(g.title)}</span><button class="btn btn-sm" style="color:var(--red);border:1px solid var(--red);background:none;cursor:pointer;border-radius:6px;padding:4px 10px;font-size:12px" onclick="delGuide('${g.id}');renderManage()">Delete</button></div>`).join('')
+    : '<div style="color:var(--muted);font-size:14px;padding:8px 0">No guides yet</div>';
+  document.getElementById('m-audio-list').innerHTML = S.audio.length
+    ? S.audio.map(a=>`<div class="manage-row"><span style="font-weight:600">${esc(a.title)}</span><button class="btn btn-sm" style="color:var(--red);border:1px solid var(--red);background:none;cursor:pointer;border-radius:6px;padding:4px 10px;font-size:12px" onclick="delAudio('${a.id}');renderManage()">Delete</button></div>`).join('')
+    : '<div style="color:var(--muted);font-size:14px;padding:8px 0">No audio yet</div>';
+}
+
+// ── IMPORT / EXPORT ────────────────────────────────────────────
+function exportData() {
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='rxstudy-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+}
+function importData(input) {
+  const f=input.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try {
+      const d=JSON.parse(e.target.result);
+      if(!d.flashcards) throw new Error('Invalid file');
+      d.guides=d.guides||[]; d.audio=d.audio||[]; d.progress=d.progress||{};
+      if(d._import) {
+        if(!confirm('Add '+d.flashcards.length+' flashcards and '+d.guides.length+' guides to your app?')) return;
+        S.flashcards.push(...d.flashcards); S.guides.push(...d.guides); S.audio.push(...d.audio);
+      } else {
+        d.categories=undefined; d.topics=undefined;
+        if(!confirm('Import '+d.flashcards.length+' cards, '+d.guides.length+' guides, '+d.audio.length+' audio?\nThis replaces your current data.')) return;
+        S=d;
+      }
+      save(); renderManage(); alert('Done!');
+    } catch(ex) { alert('Import failed: '+ex.message); }
+  };
+  r.readAsText(f);
+}
+function clearAll() {
+  if(!confirm('Delete ALL your content? This cannot be undone.')) return;
+  localStorage.removeItem(KEY); S=defaultData(); save(); renderManage();
+  alert('Cleared.');
+}
+
+// ── HELPERS ────────────────────────────────────────────────────
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function catTag(id){const c=CATS.find(x=>x.id===id);return c?`<span class="tag cat">${c.label}</span>`:''; }
+
+// ── INIT ───────────────────────────────────────────────────────
+initDeck();
+</script>
+</body>
+</html>
